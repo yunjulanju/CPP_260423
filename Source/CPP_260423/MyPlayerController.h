@@ -6,12 +6,16 @@
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"
 
-/**
- * 
- */
+class UInputMappingContext;
 UCLASS()
 class CPP_260423_API AMyPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
+public:
+
+	virtual void OnPossess(APawn* aPawn) override;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TSoftObjectPtr<UInputMappingContext> InputMapping;
 };

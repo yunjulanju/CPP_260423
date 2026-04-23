@@ -4,11 +4,12 @@
 #include "PlayerCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "EnhancedInputComponent.h"
+#include <Kismet/KismetMathLibrary.h>
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -26,7 +27,7 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	UE_LOG(LogTemp, Warning, TEXT("BeginPlay"));
 }
 
 // Called every frame
@@ -40,6 +41,49 @@ void APlayerCharacter::Tick(float DeltaTime)
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	UE_LOG(LogTemp, Warning, TEXT("SetupPlayerInputComponent called"));
 
+	UEnhancedInputComponent* UIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	if (UIC)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UIC Cast OK"));
+		UIC->BindAction(IA_Move, ETriggerEvent::Triggered, this, &APlayerCharacter::Move);
+		UIC->BindAction(IA_Turn, ETriggerEvent::Triggered, this, &APlayerCharacter::Turn);
+		UIC->BindAction(IA_Jump, ETriggerEvent::Triggered, this, &APlayerCharacter::Jump);
+		UIC->BindAction(IA_Jump, ETriggerEvent::Completed, this, &APlayerCharacter::StopJumping);
+		UIC->BindAction(IA_Jump, ETriggerEvent::Canceled, this, &APlayerCharacter::StopJumping);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UIC Cast FAILED"));
+	}
+	
+}
+
+void APlayerCharacter::Move(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("APlayerCharacter::Turn"));
+	FVector2D Direction = Value.Get<FVector2D>();
+
+	FRotator CameraRotation = GetControlRotation();
+
+	FRotator CameraRotaitionInFloor = FRotator(0, CameraRotation.Yaw, 0);
+
+	FVector CameraForwardInFloor = UKismetMathLibrary::GetForwardVector(CameraRotaitionInFloor);
+
+	FVector CameraRightInFloor = UKismetMathLibrary::GetRightVector(CameraRotaitionInFloor);
+
+	AddMovementInput(CameraForwardInFloor * Direction.X);
+
+	AddMovementInput(CameraRightInFloor * Direction.Y);
+}
+
+void APlayerCharacter::Turn(const FInputActionValue& Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("APlayerCharacter::Turn"));
+	FVector2D RotationDirection = Value.Get<FVector2D>();
+
+	AddControllerPitchInput(RotationDirection.Y);
+	AddControllerYawInput(RotationDirection.X);
 }
 
